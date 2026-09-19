@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EM Bridal &middot; Leads</title>
+<style>
+  :root{--ivory:#FAF6F0;--charcoal:#2E2B29;--mocha:#B08D7E;--rose:#D9B8AE;--line:#E6DDD3}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ivory);color:var(--charcoal);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid var(--line);background:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{font-size:16px;margin:0;font-weight:600}
+  main{max-width:840px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px}
+  input{padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit}
+  button{background:var(--charcoal);color:#fff;border:0;border-radius:7px;padding:9px 16px;font:inherit;cursor:pointer}
+  button.ghost{background:transparent;color:var(--charcoal);border:1px solid var(--line)}
+  button.mini{padding:5px 11px;font-size:13px;background:transparent;color:var(--charcoal);border:1px solid var(--line);border-radius:20px}
+  button.mini.on{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
+  .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .muted{color:#8a8078;font-size:13px}
+  .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mocha);font-weight:600}
+  .field{margin-top:8px}
+  a.wa{color:var(--mocha);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>EM Bridal &middot; Leads</h1>
+  <input id="pw" type="password" placeholder="Password" style="width:140px">
+  <button onclick="load()">Load</button>
+  <button class="ghost" onclick="dl()">Export CSV</button>
+  <button class="ghost" onclick="location.href='/admin'">Admin</button>
+  <span id="status" class="muted"></span>
+</header>
+<main><div id="list" class="muted">Enter password and press Load.</div></main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const pw = () => encodeURIComponent($('pw').value);
+let leads = [];
+
+async function load(){
+  const r = await fetch('/api/leads?pw='+pw());
+  if(!r.ok){ $('status').textContent='Wrong password'; return; }
+  leads = await r.json(); render();
+  $('status').textContent = leads.length + ' leads';
+}
+function dl(){ location.href = '/api/leads.csv?pw='+pw(); }
+
+function render(){
+  if(!leads.length){ $('list').innerHTML = '<p class="muted">No bookings yet.</p>'; return; }
+  $('list').innerHTML = leads.map(l=>{
+    const when = new Date(l.createdAt).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const fields = ['style','eventDate','size','notes']
+      .filter(k=>l[k]&&l[k]!=='\u2014')
+      .map(k=>`<div class="field"><div class="k">${k.replace(/([A-Z])/g,' $1')}</div>${esc(l[k])}</div>`).join('');
+    return `<div class="card">
+      <div class="row">
+        <b>${esc(l.name||'(no name)')}</b>
+        <span class="muted">${when}</span>
+      </div>
+      <div class="muted"><a class="wa" href="https://wa.me/${esc(l.phone)}" target="_blank">+${esc(l.phone)} &rarr; open chat</a></div>
+      ${fields}
+      <div class="row" style="margin-top:14px">
+        <span>
+          ${['new','contacted','booked','lost'].map(s=>
+            `<button class="mini ${l.status===s?'on':''}" onclick="setStatus('${l.id}','${s}')">${s}</button>`).join(' ')}
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setStatus(id,status){
+  await fetch('/api/leads/status?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});
+  const l = leads.find(x=>x.id===id); if(l) l.status = status; render();
+}
+</script>
+</body>
+</html>

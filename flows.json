@@ -1,0 +1,109 @@
+{
+  "enquiry": {
+    "id": "enquiry",
+    "name": "Bridal enquiry (your standard flow)",
+    "enabled": true,
+    "triggerRuleId": "enquiry",
+    "introImage": "",
+    "intro": "Our studio feature modern bridal gown with sleek design, light weight material and more on “old money” vibe ya 🥰\n\n💃Wedding gown range from RM599-999\n\n👗ROM series range from RM399-599\n\n🌟 Our price set is much lower than outside market , aim to help all brides can have affordable dream dress 🤗",
+    "steps": [
+      {
+        "key": "style",
+        "ask": "What styles of gown are you looking for ya? ☺️",
+        "type": "gallery",
+        "deferPhotos": true,
+        "error": "Just reply with the number, or tell me the style name ya 🥰"
+      },
+      {
+        "key": "details",
+        "type": "combo",
+        "ask": "Got it ya {name} 🫶🫶\n\nTo consult you better, could you please share your Event Date 💍?\n\nAlso, may we know your usual clothing size 👗 so we can recommend the perfect pieces for you ya?",
+        "fields": [
+          {
+            "key": "eventDate",
+            "extract": "date",
+            "missingAsk": "Noted ya 🥰 And may I know your Event Date 💍? (e.g. 5/12/2026)"
+          },
+          {
+            "key": "size",
+            "extract": "size",
+            "missingAsk": "Thank you ya 🥰 And your usual clothing size 👗? (XS / S / M / L / XL — or just tell me if you're not sure)"
+          }
+        ],
+        "error": "Could you share your Event Date 💍 and usual clothing size 👗 ya?"
+      }
+    ],
+    "skipConfirm": true,
+    "photoSend": {
+      "styleKey": "style",
+      "before": "Nicee hehe",
+      "after": "Here's some of our {style}, and more in studio ya ❤️"
+    },
+    "success": "Would you like to come over our studio for a Fitting session to try on the gowns see how it fit on your body ? 🥰\n\nBecause bridal gown is a very unique item, need try on body to feel if it’s “the one” for you 💃",
+    "confirm": "",
+    "confirmYes": [
+      "yes"
+    ],
+    "confirmNo": [
+      "no"
+    ],
+    "restart": "No problem ya, let's start again 🥰",
+    "cancel": "No worries ya ❤️ Message us anytime!",
+    "cancelWords": [
+      "cancel",
+      "stop",
+      "batal",
+      "取消"
+    ],
+    "humanWords": [
+      "human",
+      "staff",
+      "call me",
+      "真人",
+      "人工"
+    ],
+    "timeoutMinutes": 720,
+    "timeoutMessage": "Still there ya 🥰 Just send your event date and size whenever you're free ❤️"
+  },
+  "browse": {
+    "id": "browse",
+    "name": "Just browsing (photos only)",
+    "enabled": true,
+    "triggerRuleId": "collection",
+    "intro": "Sure ya! Which series would you like to see 🥰",
+    "steps": [
+      {
+        "key": "style",
+        "ask": "",
+        "type": "gallery",
+        "afterPhotos": "Here's some of our {style}, and more in studio ya ❤️\n\nWould you like to come over for a Fitting session to try them on? 🥰",
+        "error": "Just reply with the number ya 🥰"
+      }
+    ],
+    "skipConfirm": true,
+    "success": "",
+    "confirm": "",
+    "confirmYes": [
+      "yes"
+    ],
+    "confirmNo": [
+      "no"
+    ],
+    "restart": "Let's try again ya",
+    "cancel": "No worries ya ❤️",
+    "cancelWords": [
+      "cancel",
+      "stop",
+      "batal",
+      "取消"
+    ],
+    "humanWords": [
+      "human",
+      "staff",
+      "真人",
+      "人工"
+    ],
+    "timeoutMinutes": 720,
+    "timeoutMessage": "Still there ya 🥰 Reply *4* anytime to see more gowns ❤️"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "photosPerSend": 5,
+  "afterDirectSend": "Would you like to come over our studio for a Fitting session to try on the gowns see how it fit on your body ? 🥰",
+  "greetingImage": "",
+  "styles": [
+    {
+      "id": "modest-elegant",
+      "name": "Modest Elegant",
+      "enabled": true,
+      "keywords": [
+        "modest",
+        "modest elegant",
+        "long sleeve",
+        "long sleeves",
+        "muslimah",
+        "hijab",
+        "tudung",
+        "covered",
+        "保守",
+        "长袖"
+      ],
+      "blurb": "",
+      "photos": []
+    },
+    {
+      "id": "chic-romance",
+      "name": "Chic Romance",
+      "enabled": true,
+      "keywords": [
+        "chic",
+        "chic romance",
+        "romance",
+        "romantic",
+        "优雅",
+        "浪漫"
+      ],
+      "blurb": "",
+      "photos": []
+    },
+    {
+      "id": "sexy-flair",
+      "name": "Sexy Flair",
+      "enabled": true,
+      "keywords": [
+        "sexy",
+        "sexy flair",
+        "flair",
+        "fitting cut",
+        "mermaid",
+        "性感"
+      ],
+      "blurb": "",
+      "photos": []
+    },
+    {
+      "id": "rom-series",
+      "name": "ROM Series",
+      "enabled": true,
+      "keywords": [
+        "rom",
+        "rom series",
+        "registration",
+        "signing",
+        "minimal",
+        "light weight",
+        "lightweight",
+        "注册",
+        "简约"
+      ],
+      "blurb": "",
+      "photos": []
+    }
+  ]
+}

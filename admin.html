@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EM Bridal &middot; Bot Admin</title>
+<style>
+  :root{--ivory:#FAF6F0;--charcoal:#2E2B29;--mocha:#B08D7E;--rose:#D9B8AE;--line:#E6DDD3}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ivory);color:var(--charcoal);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{position:sticky;top:0;z-index:5;padding:14px 20px;border-bottom:1px solid var(--line);background:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.03em}
+  nav{display:flex;gap:4px;margin:0 auto 0 12px}
+  nav button{background:transparent;color:var(--charcoal);border:1px solid transparent;padding:7px 14px;border-radius:20px}
+  nav button.on{background:var(--charcoal);color:#fff}
+  main{max-width:840px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  .card h3{margin:0;font-size:14px;font-weight:600}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mocha);margin:14px 0 5px;font-weight:600}
+  textarea,input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;background:#fff;color:inherit}
+  textarea{min-height:90px;resize:vertical}
+  button{background:var(--charcoal);color:#fff;border:0;border-radius:7px;padding:9px 16px;font:inherit;cursor:pointer}
+  button.ghost{background:transparent;color:var(--charcoal);border:1px solid var(--line)}
+  button.danger{background:transparent;color:#9c4a3c;border:1px solid #E3C6C0;padding:6px 12px;font-size:13px}
+  button.mini{padding:5px 10px;font-size:13px;background:transparent;color:var(--charcoal);border:1px solid var(--line)}
+  .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .muted{color:#8a8078;font-size:13px}
+  .step{border-left:3px solid var(--rose);padding-left:14px;margin:16px 0}
+  .pill{background:var(--ivory);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12px}
+  .hide{display:none}
+  #status{font-size:13px}
+  .tip{background:#FFF9F2;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;color:#6b625b;margin-bottom:14px}
+  code{background:var(--ivory);padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>EM Bridal &middot; Bot</h1>
+  <nav>
+    <button id="tab-replies" class="on" onclick="tab('replies')">Replies</button>
+    <button id="tab-gowns" onclick="tab('gowns')">Gowns</button>
+    <button id="tab-flows" onclick="tab('flows')">Flows</button>
+    <button class="ghost" onclick="location.href='/leads'">Leads</button>
+  </nav>
+  <input id="pw" type="password" placeholder="Password" style="width:140px">
+  <button onclick="loadAll()">Load</button>
+  <button onclick="saveAll()">Save</button>
+  <span id="status" class="muted"></span>
+</header>
+
+<main>
+  <!-- ============ REPLIES ============ -->
+  <section id="pane-replies">
+    <div class="tip">These fire instantly on keyword match. Nothing here is generated &mdash; the bot says exactly what you type.</div>
+    <div class="card">
+      <h3>General messages</h3>
+      <label>Greeting banner image (sent before the greeting text)</label>
+      <div id="greetingImgBox" style="margin-bottom:8px"></div>
+      <input type="file" accept="image/*" onchange="uploadBrand(this,'greetingImage')">
+      <label>Greeting (first contact, once per cooldown)</label><textarea id="greeting"></textarea>
+      <label>After greeting, start this flow automatically</label>
+      <select id="startFlowOnGreeting"></select>
+      <label>Away message (outside business hours)</label><textarea id="awayMessage"></textarea>
+      <label>Fallback (nothing matched)</label><textarea id="fallback"></textarea>
+      <label>Handoff (customer asks for a human)</label><textarea id="handoffMessage"></textarea>
+      <label>Resume confirmation (when you type /resume)</label><textarea id="resumeMessage" style="min-height:50px"></textarea>
+    </div>
+    <div class="card">
+      <h3>Timing</h3>
+      <label style="display:inline-block;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400;font-size:14px">
+        <input id="bhEnabled" type="checkbox" style="width:auto"> Send an away message outside business hours</label>
+      <label>Open / Close (24h, Asia/Kuala_Lumpur)</label>
+      <div style="display:flex;gap:8px"><input id="open" placeholder="11:00"><input id="close" placeholder="20:00"></div>
+      <label>Open days (0=Sun &hellip; 6=Sat)</label><input id="days" placeholder="1,2,3,4,5,6">
+      <label>Re-greet after (hours)</label><input id="greetCooldownHours" type="number">
+      <label>Pause bot after you reply manually (hours)</label><input id="handoffPauseHours" type="number">
+    </div>
+    <div id="rules"></div>
+    <button class="ghost" onclick="addRule()">+ Add keyword rule</button>
+  </section>
+
+  <!-- ============ GOWNS ============ -->
+  <section id="pane-gowns" class="hide">
+    <div class="tip">Photos here are what the bot sends when a customer picks a style. Drag nothing &mdash; use &larr; &rarr; to reorder; the <b>first photo carries the caption</b>. Bot sends up to <span id="ppsLabel">5</span> per style.</div>
+    <div class="card">
+      <label>Photos to send per style</label>
+      <input id="photosPerSend" type="number" min="1" max="10" oninput="catalog.photosPerSend=Number(this.value);document.getElementById('ppsLabel').textContent=this.value">
+      <label>Message after sending photos from a direct keyword (optional)</label>
+      <textarea id="afterDirectSend" style="min-height:60px" oninput="catalog.afterDirectSend=this.value"></textarea>
+    </div>
+    <div id="styles"></div>
+    <button class="ghost" onclick="addStyle()">+ Add style</button>
+  </section>
+
+  <!-- ============ FLOWS ============ -->
+  <section id="pane-flows" class="hide">
+    <div class="tip">A flow asks questions one at a time and saves the answers to <b>Leads</b>. Every line below is exactly what gets sent &mdash; edit freely. Use <code>{key}</code> in the confirmation and success messages to insert an answer.</div>
+    <div id="flows"></div>
+    <button class="ghost" onclick="addFlow()">+ Add flow</button>
+  </section>
+</main>
+
+<script>
+let cfg = null, flows = null, catalog = null, current = 'replies';
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const setStatus = t => $('status').textContent = t;
+const pw = () => encodeURIComponent($('pw').value);
+
+function tab(name){
+  current = name;
+  ['replies','gowns','flows'].forEach(n=>{
+    $('pane-'+n).classList.toggle('hide', n!==name);
+    $('tab-'+n).classList.toggle('on', n===name);
+  });
+}
+
+async function loadAll(){
+  const [a,b,c] = await Promise.all([
+    fetch('/api/config?pw='+pw()), fetch('/api/flows?pw='+pw()), fetch('/api/catalog?pw='+pw())
+  ]);
+  if(!a.ok||!b.ok||!c.ok){ setStatus('Wrong password'); return; }
+  cfg = await a.json(); flows = await b.json(); catalog = await c.json();
+  $('photosPerSend').value = catalog.photosPerSend ?? 5;
+  $('ppsLabel').textContent = catalog.photosPerSend ?? 5;
+  $('afterDirectSend').value = catalog.afterDirectSend || '';
+  $('greeting').value = cfg.greeting||''; $('awayMessage').value = cfg.awayMessage||'';
+  $('fallback').value = cfg.fallback||''; $('handoffMessage').value = cfg.handoffMessage||'';
+  $('resumeMessage').value = cfg.resumeMessage||'';
+  $('open').value = cfg.businessHours?.open||''; $('close').value = cfg.businessHours?.close||'';
+  $('days').value = (cfg.businessHours?.days||[]).join(',');
+  $('bhEnabled').checked = cfg.businessHours?.enabled !== false;
+  renderBrandImg(); renderAutoFlow();
+  $('greetCooldownHours').value = cfg.greetCooldownHours ?? 12;
+  $('handoffPauseHours').value = cfg.handoffPauseHours ?? 24;
+  renderRules(); renderStyles(); renderFlows();
+  setStatus('Loaded');
+}
+
+/* ---------- rules ---------- */
+function renderRules(){
+  const ids = (cfg.rules||[]).map(r=>r.id);
+  $('rules').innerHTML = (cfg.rules||[]).map((r,i)=>`
+    <div class="card">
+      <div class="row"><h3>${esc(r.id)||'rule'}</h3>
+        <span>${Object.values(flows||{}).some(f=>f.triggerRuleId===r.id&&f.enabled)?'<span class="pill">starts a flow</span> ':''}
+        <button class="danger" onclick="removeRule(${i})">Delete</button></span></div>
+      <label>Rule name</label><input value="${esc(r.id)}" oninput="cfg.rules[${i}].id=this.value">
+      <label>Keywords (comma separated &mdash; EN / BM / &#20013;&#25991;)</label>
+      <textarea style="min-height:56px" oninput="cfg.rules[${i}].keywords=this.value.split(',').map(s=>s.trim()).filter(Boolean)">${esc((r.keywords||[]).join(', '))}</textarea>
+      <label>Reply${r.handoff?' (disabled &mdash; hands off to you)':''}</label>
+      <textarea oninput="cfg.rules[${i}].reply=this.value" ${r.handoff?'disabled':''}>${esc(r.reply)}</textarea>
+      <label>Image URLs (one per line, max 6)</label>
+      <textarea style="min-height:52px" oninput="cfg.rules[${i}].images=this.value.split('\\n').map(s=>s.trim()).filter(Boolean)">${esc((r.images||[]).join('\n'))}</textarea>
+    </div>`).join('');
+}
+function addRule(){ cfg.rules.push({id:'new-rule',keywords:[],reply:''}); renderRules(); }
+function removeRule(i){ cfg.rules.splice(i,1); renderRules(); }
+
+/* ---------- brand images + auto-start ---------- */
+function renderBrandImg(){
+  const f = cfg.greetingImage;
+  $('greetingImgBox').innerHTML = f
+    ? `<img src="/photos/${esc(f)}" style="max-width:220px;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:6px">
+       <button class="mini" onclick="cfg.greetingImage='';renderBrandImg()">Remove</button>`
+    : '<span class="muted">No banner &mdash; greeting sends as text only.</span>';
+}
+function renderAutoFlow(){
+  $('startFlowOnGreeting').innerHTML = '<option value="">\u2014 none, just the menu \u2014</option>' +
+    Object.keys(flows).map(id=>`<option value="${esc(id)}" ${cfg.startFlowOnGreeting===id?'selected':''}>${esc(flows[id].name||id)}</option>`).join('');
+  $('startFlowOnGreeting').onchange = e => cfg.startFlowOnGreeting = e.target.value;
+}
+async function uploadBrand(input, target, fid){
+  if(!input.files[0]) return;
+  const fd = new FormData(); fd.append('photo', input.files[0]);
+  setStatus('Uploading\u2026');
+  const r = await fetch('/api/brand/upload?pw='+pw(),{method:'POST',body:fd});
+  if(!r.ok){ setStatus('Upload failed'); return; }
+  const { file } = await r.json();
+  input.value='';
+  if(target==='greetingImage'){ cfg.greetingImage=file; renderBrandImg(); }
+  else { flows[fid].introImage=file; renderFlows(); }
+  setStatus('Uploaded \u2713 remember to Save');
+}
+
+/* ---------- gowns ---------- */
+function renderStyles(){
+  $('styles').innerHTML = (catalog.styles||[]).map((s,i)=>`
+    <div class="card">
+      <div class="row"><h3>${esc(s.name)}</h3>
+        <span>
+        <label style="display:inline;margin:0;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400">
+          <input type="checkbox" style="width:auto" ${s.enabled!==false?'checked':''} onchange="catalog.styles[${i}].enabled=this.checked;renderStyles()"> show to customers</label>
+        <button class="danger" onclick="removeStyle(${i})">Delete</button></span></div>
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:2"><label>Name (what the customer sees)</label>
+          <input value="${esc(s.name)}" oninput="catalog.styles[${i}].name=this.value"></div>
+        <div style="flex:1"><label>id (no spaces)</label>
+          <input value="${esc(s.id)}" oninput="catalog.styles[${i}].id=this.value.trim()"></div>
+      </div>
+
+      <label>Caption sent with the first photo</label>
+      <textarea style="min-height:70px" oninput="catalog.styles[${i}].blurb=this.value">${esc(s.blurb)}</textarea>
+
+      <label>Keywords that pull these photos directly (comma separated)</label>
+      <textarea style="min-height:52px" oninput="catalog.styles[${i}].keywords=this.value.split(',').map(x=>x.trim()).filter(Boolean)">${esc((s.keywords||[]).join(', '))}</textarea>
+
+      <label>Photos &mdash; ${(s.photos||[]).length} uploaded, first ${catalog.photosPerSend||5} get sent</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        ${(s.photos||[]).map((f,pi)=>`
+          <div style="width:96px">
+            <img src="/photos/${esc(f)}" style="width:96px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--line);${pi < (catalog.photosPerSend||5) ? '' : 'opacity:.35'}">
+            <div style="display:flex;gap:2px;margin-top:3px">
+              <button class="mini" style="flex:1;padding:3px" onclick="movePhoto('${esc(s.id)}',${pi},-1)">&larr;</button>
+              <button class="mini" style="flex:1;padding:3px" onclick="movePhoto('${esc(s.id)}',${pi},1)">&rarr;</button>
+              <button class="mini" style="flex:1;padding:3px;color:#9c4a3c" onclick="delPhoto('${esc(s.id)}','${esc(f)}')">&times;</button>
+            </div>
+          </div>`).join('') || '<span class="muted">No photos yet &mdash; the bot will send the caption only.</span>'}
+      </div>
+      <input type="file" accept="image/*" multiple onchange="uploadPhotos('${esc(s.id)}',this)">
+      <div class="muted" style="margin-top:4px">Upload saves immediately. Everything else needs <b>Save</b>.</div>
+    </div>`).join('');
+}
+
+function addStyle(){
+  const name = prompt('Style name, e.g. "Ball gown"');
+  if(!name) return;
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  catalog.styles.push({id,name,enabled:true,keywords:[name.toLowerCase()],blurb:'',photos:[]});
+  renderStyles();
+}
+function removeStyle(i){ if(confirm('Delete this style and its photo list?')){ catalog.styles.splice(i,1); renderStyles(); } }
+
+async function uploadPhotos(id, input){
+  if(!input.files.length) return;
+  const fd = new FormData();
+  [...input.files].forEach(f=>fd.append('photos',f));
+  setStatus('Uploading\u2026');
+  const r = await fetch('/api/catalog/'+id+'/photos?pw='+pw(),{method:'POST',body:fd});
+  if(!r.ok){ setStatus('Upload failed'); return; }
+  const j = await r.json();
+  const s = catalog.styles.find(x=>x.id===id); s.photos = j.photos;
+  input.value=''; renderStyles(); setStatus('Photos uploaded \u2713');
+}
+async function delPhoto(id,file){
+  const r = await fetch('/api/catalog/'+id+'/photos/delete?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file})});
+  if(!r.ok){ setStatus('Delete failed'); return; }
+  const j = await r.json();
+  catalog.styles.find(x=>x.id===id).photos = j.photos;
+  renderStyles(); setStatus('Photo removed');
+}
+async function movePhoto(id,i,d){
+  const s = catalog.styles.find(x=>x.id===id), j=i+d;
+  if(j<0||j>=s.photos.length) return;
+  [s.photos[i],s.photos[j]]=[s.photos[j],s.photos[i]];
+  renderStyles();
+  await fetch('/api/catalog/'+id+'/photos/reorder?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({photos:s.photos})});
+}
+
+/* ---------- flows ---------- */
+function renderFlows(){
+  $('flows').innerHTML = Object.keys(flows).map(fid=>{
+    const f = flows[fid];
+    const ruleOpts = (cfg.rules||[]).map(r=>`<option value="${esc(r.id)}" ${f.triggerRuleId===r.id?'selected':''}>${esc(r.id)}</option>`).join('');
+    return `
+    <div class="card">
+      <div class="row"><h3>${esc(f.name||fid)}</h3>
+        <span>
+          <label style="display:inline;margin:0;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400">
+          <input type="checkbox" style="width:auto" ${f.enabled?'checked':''} onchange="flows['${fid}'].enabled=this.checked"> live</label>
+          <button class="danger" onclick="removeFlow('${fid}')">Delete</button></span></div>
+
+      <label>Flow name</label><input value="${esc(f.name)}" oninput="flows['${fid}'].name=this.value">
+      <label>Starts when this keyword rule matches</label>
+      <select onchange="flows['${fid}'].triggerRuleId=this.value">${ruleOpts}</select>
+
+      <label>Opening banner image (optional)</label>
+      ${f.introImage?`<div><img src="/photos/${esc(f.introImage)}" style="max-width:200px;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:6px">
+         <button class="mini" onclick="flows['${fid}'].introImage='';renderFlows()">Remove</button></div>`
+        :'<span class="muted">None</span>'}
+      <input type="file" accept="image/*" style="margin-top:6px" onchange="uploadBrand(this,'introImage','${fid}')">
+      <label>Opening message</label><textarea oninput="flows['${fid}'].intro=this.value">${esc(f.intro)}</textarea>
+
+      <div class="row" style="margin-top:18px"><b style="font-size:13px">Questions</b>
+        <button class="mini" onclick="addStep('${fid}')">+ Add question</button></div>
+
+      ${(f.steps||[]).map((s,i)=>`
+        <div class="step">
+          <div class="row"><span class="pill">${i+1}</span>
+            <span>
+              <button class="mini" onclick="moveStep('${fid}',${i},-1)">&uarr;</button>
+              <button class="mini" onclick="moveStep('${fid}',${i},1)">&darr;</button>
+              <button class="danger" onclick="removeStep('${fid}',${i})">Remove</button></span></div>
+          <label>What the bot asks</label>
+          <textarea style="min-height:60px" oninput="flows['${fid}'].steps[${i}].ask=this.value">${esc(s.ask)}</textarea>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1"><label>Save as (no spaces)</label>
+              <input value="${esc(s.key)}" oninput="flows['${fid}'].steps[${i}].key=this.value.trim()"></div>
+            <div style="flex:1"><label>Answer type</label>
+              <select onchange="flows['${fid}'].steps[${i}].type=this.value;renderFlows()">
+                <option value="text" ${s.type!=='choice'?'selected':''}>Free text</option>
+                <option value="choice" ${s.type==='choice'?'selected':''}>Numbered choice</option>
+                <option value="gallery" ${s.type==='gallery'?'selected':''}>Gown styles</option>
+                <option value="combo" ${s.type==='combo'?'selected':''}>Two details at once (date + size)</option>
+              </select></div>
+          </div>
+          ${s.type==='combo'?`
+            <div class="tip" style="margin:10px 0 0">She can answer both in one message, in any order, or across two messages &mdash; the bot pulls out whatever it recognises and asks only for what's still missing.</div>
+            ${(s.fields||[]).map((fl,fi)=>`
+              <div style="border-left:2px solid var(--line);padding-left:12px;margin-top:12px">
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1"><label>Save as</label>
+                    <input value="${esc(fl.key)}" oninput="flows['${fid}'].steps[${i}].fields[${fi}].key=this.value.trim()"></div>
+                  <div style="flex:1"><label>Look for</label>
+                    <select onchange="flows['${fid}'].steps[${i}].fields[${fi}].extract=this.value">
+                      <option value="date" ${fl.extract==='date'?'selected':''}>A date</option>
+                      <option value="size" ${fl.extract==='size'?'selected':''}>A dress size</option>
+                    </select></div>
+                </div>
+                <label>If this one is missing, ask</label>
+                <textarea style="min-height:52px" oninput="flows['${fid}'].steps[${i}].fields[${fi}].missingAsk=this.value">${esc(fl.missingAsk)}</textarea>
+              </div>`).join('')}`
+          :s.type==='gallery'?`
+            <div class="tip" style="margin:10px 0 0">Options come from the <b>Gowns</b> tab automatically (${(catalog&&catalog.styles||[]).filter(x=>x.enabled!==false).length} live styles).</div>
+            <label style="display:inline-block;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400;font-size:14px">
+              <input type="checkbox" style="width:auto" ${s.deferPhotos?'checked':''} onchange="flows['${fid}'].steps[${i}].deferPhotos=this.checked;renderFlows()"> hold the photos until the end of the flow</label>
+            ${s.deferPhotos?'':`
+              <label>Message sent after the photos</label>
+              <textarea style="min-height:60px" oninput="flows['${fid}'].steps[${i}].afterPhotos=this.value">${esc(s.afterPhotos)}</textarea>`}`
+          :s.type==='choice'?`
+            <label>Options (one per line &mdash; bot numbers them automatically)</label>
+            <textarea style="min-height:60px" oninput="flows['${fid}'].steps[${i}].options=this.value.split('\\n').map(x=>x.trim()).filter(Boolean)">${esc((s.options||[]).join('\n'))}</textarea>`:`
+            <label style="display:inline-block;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400;font-size:14px">
+              <input type="checkbox" style="width:auto" ${s.optional?'checked':''} onchange="flows['${fid}'].steps[${i}].optional=this.checked"> optional (customer can reply "skip")</label>`}
+          <label>If the answer doesn't make sense, say</label>
+          <input value="${esc(s.error)}" oninput="flows['${fid}'].steps[${i}].error=this.value">
+        </div>`).join('')}
+
+      <div class="row" style="margin-top:18px"><b style="font-size:13px">Send gown photos at the end</b>
+        <label style="display:inline;margin:0;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:400">
+        <input type="checkbox" style="width:auto" ${f.photoSend?'checked':''} onchange="togglePhotoSend('${fid}',this.checked)"> on</label></div>
+      ${f.photoSend?`
+        <label>Which answer holds the style</label>
+        <input value="${esc(f.photoSend.styleKey)}" oninput="flows['${fid}'].photoSend.styleKey=this.value">
+        <label>Message before the photos</label>
+        <input value="${esc(f.photoSend.before)}" oninput="flows['${fid}'].photoSend.before=this.value">
+        <label>Message after the photos</label>
+        <textarea style="min-height:56px" oninput="flows['${fid}'].photoSend.after=this.value">${esc(f.photoSend.after)}</textarea>`:''}
+
+      <label>Confirmation &mdash; use {${(f.steps||[]).map(s=>s.key).join('}, {')}}</label>
+      <textarea oninput="flows['${fid}'].confirm=this.value">${esc(f.confirm)}</textarea>
+      <label>After she confirms</label><textarea style="min-height:60px" oninput="flows['${fid}'].success=this.value">${esc(f.success)}</textarea>
+      <label>If she says it's wrong</label><input value="${esc(f.restart)}" oninput="flows['${fid}'].restart=this.value">
+      <label>If she cancels</label><input value="${esc(f.cancel)}" oninput="flows['${fid}'].cancel=this.value">
+      <label>If she goes quiet (timeout message)</label><input value="${esc(f.timeoutMessage)}" oninput="flows['${fid}'].timeoutMessage=this.value">
+      <label>Abandon flow after (minutes)</label><input type="number" value="${esc(f.timeoutMinutes)}" oninput="flows['${fid}'].timeoutMinutes=Number(this.value)">
+      <label>Words that cancel the flow</label>
+      <input value="${esc((f.cancelWords||[]).join(', '))}" oninput="flows['${fid}'].cancelWords=this.value.split(',').map(x=>x.trim()).filter(Boolean)">
+      <label>Words that mean "yes, correct"</label>
+      <input value="${esc((f.confirmYes||[]).join(', '))}" oninput="flows['${fid}'].confirmYes=this.value.split(',').map(x=>x.trim()).filter(Boolean)">
+      <label>Words that mean "no, wrong"</label>
+      <input value="${esc((f.confirmNo||[]).join(', '))}" oninput="flows['${fid}'].confirmNo=this.value.split(',').map(x=>x.trim()).filter(Boolean)">
+    </div>`;
+  }).join('');
+}
+
+function togglePhotoSend(fid,on){
+  flows[fid].photoSend = on ? {styleKey:'style',before:'',after:"Here's some of our {style}, and more in studio ya \u2764\ufe0f"} : null;
+  renderFlows();
+}
+function addStep(fid){ flows[fid].steps.push({key:'field'+(flows[fid].steps.length+1),ask:'',type:'text',error:'Could you send that again?'}); renderFlows(); }
+function removeStep(fid,i){ flows[fid].steps.splice(i,1); renderFlows(); }
+function moveStep(fid,i,d){
+  const s = flows[fid].steps, j = i+d;
+  if(j<0||j>=s.length) return;
+  [s[i],s[j]] = [s[j],s[i]]; renderFlows();
+}
+function addFlow(){
+  const id = prompt('Flow id (no spaces, e.g. alteration)');
+  if(!id) return;
+  flows[id] = {id,name:id,enabled:false,triggerRuleId:(cfg.rules[0]||{}).id,intro:'',steps:[{key:'name',ask:"What's your name?",type:'text',error:'Could you send that again?'}],
+    confirm:'Here\u2019s what I have:\n\n{name}\n\nCorrect? Reply yes or no.',confirmYes:['yes','ok','betul','\u5bf9'],confirmNo:['no','salah','\u4e0d\u5bf9'],
+    success:'Thank you {name}! We\u2019ll be in touch \ud83e\udd0d',restart:'No problem, let\u2019s start again.',cancel:'No worries \ud83e\udd0d',
+    cancelWords:['cancel','stop','batal'],humanWords:['human','staff','\u771f\u4eba'],timeoutMinutes:60,timeoutMessage:'Still there?'};
+  renderFlows();
+}
+function removeFlow(fid){ if(confirm('Delete this flow?')){ delete flows[fid]; renderFlows(); } }
+
+/* ---------- save ---------- */
+async function saveAll(){
+  if(!cfg){ setStatus('Load first'); return; }
+  cfg.greeting=$('greeting').value; cfg.awayMessage=$('awayMessage').value;
+  cfg.fallback=$('fallback').value; cfg.handoffMessage=$('handoffMessage').value;
+  cfg.resumeMessage=$('resumeMessage').value;
+  cfg.greetCooldownHours=Number($('greetCooldownHours').value);
+  cfg.handoffPauseHours=Number($('handoffPauseHours').value);
+  cfg.businessHours={timezone:'Asia/Kuala_Lumpur',enabled:$('bhEnabled').checked,open:$('open').value,close:$('close').value,
+    days:$('days').value.split(',').map(s=>Number(s.trim())).filter(n=>!isNaN(n))};
+
+  const r1 = await fetch('/api/config?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:cfg})});
+  const r2 = await fetch('/api/flows?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({flows})});
+  const r3 = await fetch('/api/catalog?pw='+pw(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({catalog})});
+  if(r1.ok&&r2.ok&&r3.ok){ setStatus('Saved \u2713 live now'); return; }
+  const err = (!r3.ok && (await r3.json()).error) || (!r2.ok && (await r2.json()).error) || (!r1.ok && (await r1.json()).error) || 'Save failed';
+  setStatus(err);
+}
+</script>
+</body>
+</html>

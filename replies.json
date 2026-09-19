@@ -1,0 +1,150 @@
+{
+  "businessHours": {
+    "timezone": "Asia/Kuala_Lumpur",
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "open": "11:00",
+    "close": "20:00",
+    "enabled": false
+  },
+  "greetCooldownHours": 24,
+  "handoffPauseHours": 24,
+  "greeting": "Hi Lovely , thank you for contacting Embridal! ❤️ We're excited to help you find your dream gown.",
+  "awayMessage": "Hi Lovely , thank you for contacting Embridal! ❤️ We're away from the studio right now but will reply you first thing 🥰",
+  "fallback": "Noted ya 🥰 Liwen or Tony will get back to you shortly ❤️",
+  "handoffMessage": "Sure ya! Liwen or Tony will reply you personally in a bit ❤️",
+  "resumeMessage": "Auto-reply is back on for this chat.",
+  "rules": [
+    {
+      "id": "enquiry",
+      "keywords": [
+        "dream wedding dress",
+        "looking for",
+        "interested",
+        "enquire",
+        "enquiry",
+        "rent",
+        "rental",
+        "sewa",
+        "book",
+        "booking",
+        "fitting",
+        "appointment",
+        "berminat",
+        "租",
+        "预约",
+        "试穿",
+        "想问",
+        "2"
+      ],
+      "reply": ""
+    },
+    {
+      "id": "price",
+      "keywords": [
+        "1",
+        "price",
+        "pricing",
+        "harga",
+        "berapa",
+        "how much",
+        "价格",
+        "多少钱",
+        "多少"
+      ],
+      "reply": "💃Wedding gown range from RM599-999\n\n👗ROM series range from RM399-599\n\n🌟 Our price set is much lower than outside market , aim to help all brides can have affordable dream dress 🤗\n\nWhat styles of gown are you looking for ya? ☺️"
+    },
+    {
+      "id": "collection",
+      "keywords": [
+        "4",
+        "collection",
+        "style",
+        "styles",
+        "design",
+        "gown",
+        "gowns",
+        "dress",
+        "photo",
+        "gambar",
+        "koleksi",
+        "款式",
+        "礼服",
+        "图片",
+        "婚纱"
+      ],
+      "reply": ""
+    },
+    {
+      "id": "location",
+      "keywords": [
+        "3",
+        "location",
+        "address",
+        "where",
+        "lokasi",
+        "alamat",
+        "mana",
+        "studio",
+        "地址",
+        "在哪",
+        "哪里"
+      ],
+      "reply": "📍 EM Bridal Studio\n[Full studio address, Cheras]\nGoogle Maps: [link]\n\nBy appointment ya 🥰 Send us your event date and we'll arrange a fitting time for you ❤️\n🅿️ [Parking note]"
+    },
+    {
+      "id": "terms",
+      "keywords": [
+        "5",
+        "deposit",
+        "terms",
+        "refund",
+        "cancel booking",
+        "syarat",
+        "退",
+        "定金",
+        "押金"
+      ],
+      "reply": "Deposit & terms ❤️\n\n• Deposit: [RM__], fully refundable when the gown is returned in good condition\n• Deposit is transferable to another gown, subject to availability\n• Balance due on collection\n• Late return / damage: [policy]\n\nAny other questions just ask ya 🥰"
+    },
+    {
+      "id": "human",
+      "keywords": [
+        "6",
+        "human",
+        "talk to",
+        "person",
+        "staff",
+        "owner",
+        "liwen",
+        "tony",
+        "人工",
+        "真人",
+        "客服"
+      ],
+      "handoff": true
+    },
+    {
+      "id": "thanks",
+      "keywords": [
+        "thanks",
+        "thank you",
+        "tq",
+        "ty",
+        "terima kasih",
+        "谢谢",
+        "ok",
+        "okay",
+        "noted"
+      ],
+      "reply": "You're welcome ya ❤️ See you at the studio!"
+    }
+  ],
+  "startFlowOnGreeting": "enquiry"
+}
