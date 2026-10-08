@@ -27,13 +27,20 @@ Other behaviour:
 - **Away message** outside business hours — off by default, toggle in Admin → Replies
 - **You reply manually** → bot goes silent in that chat for 24h and drops any half-finished flow
 - **`/pause` `/resume`** → type these yourself in any chat
+- **`/reset`** → wipes that chat's state and replays the opening. Works from either side, so you can retest the whole flow from your own phone without waiting out the 24h greeting cooldown
 - **"cancel" / "human"** mid-flow → exits cleanly; 12h of silence abandons the flow
+- **Several styles in one answer** — "2 or 4", "chic and rom", "any", "都可以" all work. She gets photos of each, labelled by style, capped so it never becomes a 20-photo burst
 - **Direct style mention** ("do you have long sleeve?", "有短裙吗") → sends that series' photos immediately
 - Never replies in groups, status or broadcasts
+- **Brand-new conversations only** — optional. When a phone is linked, WhatsApp sends its existing chats and the bot snapshots them; with this on, anyone in that snapshot is ignored and only genuinely new enquiries get the flow. Numbers on the test list are exempt, so you can keep testing from your own chat
+- **Muted contacts** — numbers on the blocklist get nothing, in either direction. Set them in Admin → Replies
+- **Test mode** — tick "reply only to these numbers" to run the bot live while it answers only you. Contact matching checks every identifier WhatsApp supplies (phone number and LID), so it still works on accounts where WhatsApp hides the number behind a LID
 
 ## What you control from `/admin`
 
 **Replies tab** — greeting, away message, fallback, handoff, business hours, re-greet cooldown, pause duration, and every keyword rule (name, keywords, reply text, image URLs).
+
+**Opening messages.** Both the greeting and each flow's opening are now block sequences: add as many text bubbles and photos as you like, reorder with ↑ ↓, delete any. Each block sends as its own WhatsApp message, photos can carry a caption, and `{name}` inserts her WhatsApp display name.
 
 **Gowns tab** — one card per style (Long, Short, Modest/Muslimah, ROM, Lace, Satin are seeded; add your own). Per style: display name, the caption sent with the first photo, the keywords that pull it directly, a show/hide toggle, and drag-free photo management — upload multiple at once, reorder with ← →, delete. The first N photos (default 5) are what the bot sends; the rest sit greyed out as your bench. Uploads save immediately.
 
@@ -42,6 +49,14 @@ Other behaviour:
 Flows have a **live** toggle — build one, leave it off, flip it on when the wording is right.
 
 Saves apply to the next incoming message. No redeploy.
+
+## Changing the WhatsApp number
+
+Admin → Replies → **WhatsApp connection** → *Unlink this number*. That logs the current phone out, deletes the stored session and clears the bot's per-chat memory, then reopens the QR page so you can scan with a different phone. Nothing else is touched — replies, flows, gown photos and leads all stay.
+
+If the number is unlinked from the phone instead (WhatsApp → Linked devices → log out), the bot notices, clears the dead session by itself and shows a fresh QR.
+
+The QR page is password-protected — open it as `/qr?pw=YOURPASSWORD`, or use the button in the admin page.
 
 ## Files
 

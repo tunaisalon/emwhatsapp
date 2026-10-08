@@ -6,6 +6,8 @@ import { getQR, getStatus } from './qr-state.js';
 import { loadConfig, saveConfig } from './rules.js';
 import { loadFlows, saveFlows, loadLeads, saveLeads } from './flow.js';
 import { loadCatalog, saveCatalog, ensureCatalog, UPLOAD_DIR, newPhotoId, photoPath } from './catalog.js';
+import { requestUnlink } from './session.js';
+import { loadKnown, clearKnown } from './known.js';
 
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
@@ -16,7 +18,11 @@ function auth(req, res, next) {
   next();
 }
 
+let started = false;
+
 export function startServer() {
+  if (started) return;
+  started = true;
   ensureCatalog();
   const app = express();
   app.use(express.json({ limit: '2mb' }));
@@ -37,7 +43,16 @@ export function startServer() {
      <h2>EM Bridal bot</h2><p>Status: <b>${getStatus()}</b></p>
      <p><a href="/qr">Link WhatsApp</a> &middot; <a href="/admin">Admin</a></p></body>`));
 
-  app.get('/qr', async (_req, res) => {
+  app.get('/qr', async (req, res) => {
+    if ((req.query.pw || '') !== ADMIN_PASSWORD) {
+      return res.send(`<body style="font-family:system-ui;text-align:center;padding:60px;background:#FAF6F0;color:#2E2B29">
+        <h2>Link WhatsApp</h2>
+        <p>Enter the admin password to see the QR code.</p>
+        <input id="p" type="password" placeholder="Password" style="padding:10px;border:1px solid #E6DDD3;border-radius:7px;font-size:16px">
+        <button onclick="location.href='/qr?pw='+encodeURIComponent(document.getElementById('p').value)"
+          style="padding:10px 18px;border:0;border-radius:7px;background:#2E2B29;color:#fff;font-size:16px;margin-left:6px">Open</button>
+        </body>`);
+    }
     const qr = getQR();
     if (!qr) return res.send(`<body style="font-family:system-ui;text-align:center;padding:60px">
       <h2>Status: ${getStatus()}</h2>
@@ -56,6 +71,7 @@ export function startServer() {
     try {
       const cfg = req.body.config;
       if (!cfg || !Array.isArray(cfg.rules)) throw new Error('Invalid config');
+      if (cfg.greetingSequence && !Array.isArray(cfg.greetingSequence)) throw new Error('Invalid opening sequence');
       saveConfig(cfg); res.json({ ok: true });
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
@@ -68,6 +84,7 @@ export function startServer() {
       if (!flows || typeof flows !== 'object') throw new Error('Invalid flows');
       for (const f of Object.values(flows)) {
         if (!Array.isArray(f.steps) || !f.steps.length) throw new Error(`Flow "${f.id}" needs at least one step`);
+        if (f.introSequence && !Array.isArray(f.introSequence)) throw new Error(`Flow "${f.id}" has a broken opening sequence`);
         for (const s of f.steps) {
           if (!s.key || !/^[a-zA-Z][\w]*$/.test(s.key)) throw new Error(`Bad step key "${s.key}" - letters/numbers only, no spaces`);
           if (!s.ask && s.type !== 'gallery') throw new Error(`Step "${s.key}" needs a question`);
@@ -103,6 +120,22 @@ export function startServer() {
     res.setHeader('Content-Disposition', 'attachment; filename="embridal-leads.csv"');
     res.send(csv);
   });
+
+  // ---- WhatsApp session ----
+  app.get('/api/session', auth, (_req, res) => res.json({ status: getStatus() }));
+  app.post('/api/session/unlink', auth, async (_req, res) => {
+    try {
+      await requestUnlink();
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---- known chats snapshot ----
+  app.get('/api/known', auth, (_req, res) => {
+    const k = loadKnown();
+    res.json({ count: k.ids.length, capturedAt: k.capturedAt });
+  });
+  app.post('/api/known/clear', auth, (_req, res) => { clearKnown(); res.json({ ok: true }); });
 
   // ---- brand images (greeting banner, flow intro banner) ----
   app.post('/api/brand/upload', auth, upload.single('photo'), (req, res) => {

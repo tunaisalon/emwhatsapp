@@ -45,16 +45,36 @@ export function photoPath(file) {
 export function styleMessages(catalog, style, opts = {}) {
   const out = [];
   const withCaption = opts.caption !== false;
-  const limit = catalog.photosPerSend || 5;
+  const limit = opts.limit || catalog.photosPerSend || 5;
   const photos = (style.photos || []).filter(f => fs.existsSync(photoPath(f))).slice(0, limit);
 
   photos.forEach((f, i) => {
-    out.push({
-      image: { url: photoPath(f) },
-      caption: (withCaption && i === 0 && style.blurb) ? style.blurb : undefined,
-    });
+    let caption;
+    if (i === 0) {
+      const parts = [opts.label, withCaption ? style.blurb : ''].filter(Boolean);
+      caption = parts.length ? parts.join('\n') : undefined;
+    }
+    out.push({ image: { url: photoPath(f) }, caption });
   });
 
   if (!photos.length && withCaption && style.blurb) out.push(style.blurb);
+  return out;
+}
+
+/**
+ * Turn an editable block list into WhatsApp messages.
+ * Blocks: { type: 'text', text } | { type: 'image', file, caption }
+ * `t` lets the caller run template substitution on any text.
+ */
+export function blockMessages(blocks = [], t = (x) => x) {
+  const out = [];
+  for (const b of blocks || []) {
+    if (!b) continue;
+    if (b.type === 'image' && b.file) {
+      out.push({ image: { url: photoPath(b.file) }, caption: b.caption ? t(b.caption) : undefined });
+    } else if (b.text) {
+      out.push(t(b.text));
+    }
+  }
   return out;
 }

@@ -74,3 +74,50 @@ export function isOpen(cfg, now = new Date()) {
   const toMins = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + m; };
   return mins >= toMins(bh.open) && mins < toMins(bh.close);
 }
+
+/* ---------- contact filters ---------- */
+// Entries may carry a note: "60123456789 Liwen" -> matches on the digits only.
+const digitsOf = (s) => String(s || '').replace(/\D/g, '');
+
+function sameNumber(a, b) {
+  const x = digitsOf(a), y = digitsOf(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  // 0123456789 vs 60123456789 vs +60 12-345 6789
+  const min = Math.min(x.length, y.length);
+  if (min < 7) return false;
+  return x.endsWith(y) || y.endsWith(x);
+}
+
+function listNumbers(list) {
+  return (list || [])
+    // a trailing note starts at the first letter: "+60 17-888 1234 Liwen"
+    .map(e => digitsOf(String(e).replace(/[A-Za-z\u4e00-\u9fff].*$/, '')))
+    .filter(n => n.length >= 7);
+}
+
+/**
+ * true when the bot should stay completely silent with this contact.
+ * `phones` may be one identifier or several — WhatsApp now hands us a LID
+ * (e.g. 19283746501@lid) alongside the real number, so we test them all.
+ */
+export function isBlocked(cfg, phones) {
+  const list = (Array.isArray(phones) ? phones : [phones]).filter(Boolean);
+  const matchesAny = (entries) => entries.some(n => list.some(p => sameNumber(n, p)));
+
+  if (matchesAny(listNumbers(cfg.blocklist))) return true;
+
+  // optional test mode: reply ONLY to these numbers
+  if (cfg.allowlistOnly) {
+    const allowed = listNumbers(cfg.allowlist);
+    if (!allowed.length) return false;          // empty list = don't lock yourself out
+    return !matchesAny(allowed);
+  }
+  return false;
+}
+
+/** true when this contact is on the test list — always gets the bot. */
+export function isTestNumber(cfg, phones) {
+  const list = (Array.isArray(phones) ? phones : [phones]).filter(Boolean);
+  return listNumbers(cfg.allowlist).some(n => list.some(p => sameNumber(n, p)));
+}
